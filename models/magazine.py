@@ -1,5 +1,7 @@
 from database.connection import get_db_connection
 
+from models.author import Author
+
 class Magazine:
     def __init__(self, id = None, name = None, category = None):
         if id is not None and not isinstance(id, int):
@@ -72,3 +74,43 @@ class Magazine:
 
     def __repr__(self):
         return f'<Magazine {self.name}>'
+    
+    def articles(self):
+        from models.article import Article
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT article.id, article.title, article.author_id, article.magazine_id
+            FROM articles article
+            JOIN magazines magazine ON article.magazine_id = magazine_id
+            WHERE magazine.id = ?
+        """, (self.id,))
+        rows = cursor.fetchall()
+        conn.close()
+
+        return [
+            Article(id=row["id"], title=row["title"], author=row["author_id"],
+            magazine=row["magazine_id"]) for row in rows
+            ]
+    
+    def contributors(self):
+        from models.author import Author
+        from models.article import Article
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+        SELECT DISTINCT author.id, author.name
+        FROM authors author
+        JOIN articles article ON author.id = article.aurtor_id
+        JOIN magazines magazine ON article.magazine_id = magazine.id
+        """, (self.id,))
+        rows = cursor.fetchall()
+        conn.close()
+
+        return [
+            Article(id=row["id"], title=row["title"], author=row["author_id"],
+            magazine=row["magazine_id"]) for row in rows
+            ]
+

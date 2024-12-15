@@ -1,5 +1,6 @@
 from database.connection import get_db_connection
 
+
 class Author:
     def __init__(self, id = None, name = None):
         if id is not None and not isinstance(id, int):
@@ -53,4 +54,40 @@ class Author:
             return cls(id=row["id"], name=row["name"])
         else:
             return None
+        
+    def articles(self):
+        from models.article import Article
 
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT author.id. author.title, author.content, author.author_id, author.magazine_id
+            FROM articles author
+            WHERE author.author_id = ?
+        """, (self.id,))
+        rows = cursor.fetchall()
+        conn.close()
+
+        return [
+            Article(id=row["id"], title=row["title"], content=row["content"],
+                    author_id=row["author_id"], magazine_id=row["magazine_id"])
+            for row in rows
+        ]
+    
+    def magazines(self):
+        from models.magazine import Magazine
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT DISTINCT magazine.id, magazine.name, magazine.category
+            FROM magazines magazine
+            JOIN articles author ON magazine.id = author.magazine.id
+            WHERE author.author_id = ?                        
+        """, (self.id,))
+        rows = cursor.fetchall()
+        conn.close()
+
+        return [
+            Magazine(id=row["id"], name=row["name"], category=row["category"])
+            for row in rows]
